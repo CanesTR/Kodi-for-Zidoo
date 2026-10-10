@@ -7,7 +7,9 @@ Kodi itself is not bundled. Movies, TV episodes and music videos use the native
 player, with native resume and automatic watched marking at 95% final position.
 
 Tested on Z30 Pro / firmware v1.3.45 / Android 11 / Kodi 22 BETA2 ARM 32-bit.
-Other hardware and Kodi versions are unverified.
+A tester also reports successful local-library playback, resume, and watched marking on Z9X 8K / firmware 1.3.45 / Kodi 22 beta2 ARM 32-bit with Arctic Horizon 2. Home shortcuts did not route to Zidoo in that test. Other configurations are unverified.
+
+**Media paths must begin with `/storage/`. SMB/NAS URLs are not supported in the current preview.**
 
 Known issue: Kodi 22 can restart during native playback, showing Home before
 restoring the saved library list. See [Kodi issue #29691](https://github.com/xbmc/xbmc/issues/29691).
@@ -43,3 +45,7 @@ python -m unittest discover -s tests_0.7.19
 ```
 
 This is an independent project, not an official Kodi or Zidoo release.
+
+## Optional test build
+
+[0.7.20 test instructions and download](downloads/testing/README.md): changes automatic watched marking to 90% and adds shortcut selection diagnostics. Uses the existing Helper 0.2.7; device testing is pending. The default preview downloads above remain 0.7.19.
