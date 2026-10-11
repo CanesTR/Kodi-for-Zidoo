@@ -1,8 +1,7 @@
 # Z10 / Android 7 compatibility test — source only
 
 This branch contains Helper 0.2.8 source and matching add-on 0.7.21 source.
-There is **no compiled or signed Helper 0.2.8 APK yet**. Do not install Helper
-0.2.7 and expect these source changes to take effect.
+A signed Helper 0.2.8 APK supplied by Tom is now available with the matching add-on in the [tester package](https://github.com/CanesTR/Kodi-for-Zidoo/tree/main/downloads/testing/0.7.21). Device testing is pending. The build notes below are retained for developers; ordinary testers can use the prebuilt package.
 
 ## What changed
 
