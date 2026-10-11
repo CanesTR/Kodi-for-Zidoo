@@ -35,7 +35,7 @@ unverified on Z10 firmware 2.3.88.
 A successful Android build is required before sending the APK to the tester.
 No Android SDK, Java compiler or release signing key is available in the
 preparation environment, so this Helper source has not been compiled here.
-The matching add-on passed 22 automated tests:
+The matching add-on passed 23 automated tests:
 python -m unittest discover -s tests_0.7.21
 
 ## Device test
@@ -57,3 +57,52 @@ full Z10 compatibility until playback and result-return tests pass.
 
 Do not publish passwords, signing keys or unreviewed logs. The main branch's
 signed APK remains 0.2.7; this is a separate development test.
+
+## Additional tester features in Helper 0.2.8
+
+### Experimental SMB test — diagnostics only
+
+Open the Helper directly. Enter a complete movie URL such as:
+
+`smb://192.168.1.194/MEDIAS/FILMS/MKV UHD REMUX/Avatar Fire and Ash (2025)/actual-movie-filename.mkv`
+
+The filename above is a placeholder: replace it with the real filename.
+Capitalization is preserved; spaces are encoded for the URI. Do not enter a
+username or password in the URL. URLs with credentials, queries or fragments
+are rejected. Special filename characters such as # must be URI-encoded.
+
+First confirm the file plays in Zidoo File Explorer with its saved NAS login.
+Press **Test experimental SMB path (no Kodi update)**, not the local test button.
+This passes an SMB URI directly to the native player. Whether older or newer
+firmware accepts it and reuses saved credentials is not yet known.
+Save the diagnostic report whether playback succeeds or fails.
+
+This does not add NAS support to Kodi playback or change resume/watched state.
+A share root or movie folder is not a playable file. No password-file import,
+mount mapping or credential storage is implemented.
+
+### Reset pending session
+
+Open the Helper directly, which now displays diagnostics even with a saved
+pending session. Close native playback. If diagnostic polling is running,
+press Stop diagnostic polling and wait for the worker to finish.
+Press **Reset pending session (player must be closed)**.
+
+The Helper checks the localhost player API and permits reset only for a
+successful response reporting status 806 (no active playback). Network errors,
+unknown statuses and active diagnostic workers block reset.
+For a bridge session, it exports a cancelled/error result before clearing
+Helper state. The matching add-on rejects that result and clears its pending
+session without updating resume or watched state; a result-rejected notification
+may appear. If export fails, reset does not clear the pending session.
+
+### Diagnostics and validation
+
+Reports now include Android/API version, model/manufacturer, firmware build,
+launch mode and standalone player result code/position/duration.
+Launch accepted still does not mean playback succeeded.
+
+23 add-on tests pass, including cancelled-session handling without library
+writes. Helper Java syntax was parsed successfully. This is not an Android
+compile or device test; a signed Android Studio build and real device tests
+remain required.
