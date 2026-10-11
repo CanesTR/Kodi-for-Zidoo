@@ -1,3 +1,7 @@
+# Android 7 compatibility development branch
+
+**Source only: Helper 0.2.8 has not been compiled or signed.** See [Z10 build and test instructions](Z10-TEST.md). The signed APK linked below remains 0.2.7 and does not include the Android 7 fix.
+
 # Kodi for Zidoo
 
 Play Kodi library movies, TV episodes and music videos with Zidoo's native player, with native resume and automatic watched marking. This is an independent public preview, not an official Kodi or Zidoo release.
