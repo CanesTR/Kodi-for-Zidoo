@@ -30,6 +30,8 @@ public class DiagnosticActivity extends Activity {
     private volatile boolean polling;
     private volatile boolean destroyed;
     private Thread worker;
+    private boolean resetting;
+    private boolean experimentalSmb;
     private static final String API = "http://127.0.0.1:9529/ZidooVideoPlay/getPlayStatus";
 
     @Override public void onCreate(Bundle state) {
@@ -44,7 +46,7 @@ public class DiagnosticActivity extends Activity {
         LinearLayout layout = new LinearLayout(this);
         diagnosticLayout = layout;
         layout.setBackgroundColor(android.graphics.Color.BLACK);
-        layout.setVisibility(isBridgeRequest(getIntent()) || awaitingResult ? android.view.View.GONE : android.view.View.VISIBLE);
+        layout.setVisibility(isBridgeRequest(getIntent()) ? android.view.View.GONE : android.view.View.VISIBLE);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setFocusable(false);
         layout.setPadding(24,24,24,24);
@@ -56,17 +58,28 @@ public class DiagnosticActivity extends Activity {
         pathInput.setSingleLine(true);
         pathInput.setHint("Local movie path: /storage/...");
         layout.addView(pathInput);
+        Button smb = new Button(this); smb.setId(106); smb.setText("Test experimental SMB path (no Kodi update)");
+        smb.setOnClickListener(v -> {
+            if (awaitingResult) { append("Reset or finish the pending session before a diagnostic test."); return; }
+            session = ""; resumeMs = 0; nativeResume = true;
+            experimentalSmb = true;
+            try { launch(pathInput.getText().toString()); } finally { experimentalSmb = false; }
+        }); layout.addView(smb);
         Button launch = new Button(this); launch.setId(102); launch.setText("Test Zidoo playback");
         launch.setOnClickListener(v -> { if (!awaitingResult) { session = ""; resumeMs = 0; nativeResume = false; } launch(pathInput.getText().toString()); }); layout.addView(launch);
         Button stop = new Button(this); stop.setId(103); stop.setText("Stop diagnostic polling (keeps movie playing)");
         stop.setOnClickListener(v -> { polling = false; append("User stopped polling."); }); layout.addView(stop);
         Button save = new Button(this); saveButton = save; save.setId(104); save.setText("Save diagnostic report");
         save.setOnClickListener(v -> saveReport()); layout.addView(save);
+        Button reset = new Button(this); reset.setId(105); reset.setText("Reset pending session (player must be closed)");
+        reset.setOnClickListener(v -> resetPending()); layout.addView(reset);
+        smb.setNextFocusDownId(102); smb.setNextFocusUpId(101);
+        reset.setNextFocusDownId(101); reset.setNextFocusUpId(104);
         ScrollView scroll = new ScrollView(this); output = new TextView(this);
-        pathInput.setNextFocusDownId(102); pathInput.setNextFocusUpId(104);
-        launch.setNextFocusDownId(103); launch.setNextFocusUpId(101);
+        pathInput.setNextFocusDownId(106); pathInput.setNextFocusUpId(105);
+        launch.setNextFocusDownId(103); launch.setNextFocusUpId(106);
         stop.setNextFocusDownId(104); stop.setNextFocusUpId(102);
-        save.setNextFocusDownId(101); save.setNextFocusUpId(103);
+        save.setNextFocusDownId(105); save.setNextFocusUpId(103);
         output.setTextIsSelectable(false); output.setFocusable(false);
         scroll.setFocusable(false); scroll.addView(output);
         layout.addView(scroll,new LinearLayout.LayoutParams(-1,0,1)); setContentView(layout); save.requestFocus();
@@ -75,6 +88,7 @@ public class DiagnosticActivity extends Activity {
         } catch (FileNotFoundException ignored) {
         } catch (Exception e) { report.append("Checkpoint recovery failed: ").append(e).append('\n'); }
         append("Helper 0.2.8 opened. Previous diagnostic checkpoint retained.");
+        append("DEVICE: Android=" + Build.VERSION.RELEASE + " API=" + Build.VERSION.SDK_INT + " model=" + Build.MODEL + " manufacturer=" + Build.MANUFACTURER + " firmware=" + Build.DISPLAY);
         append("HELPER TASK: id=" + getTaskId() + " root=" + isTaskRoot() + " incoming_flags=" + getIntent().getFlags());
         append("No root or shell commands. Android 6–9 requires storage permission for Downloads export.");
         if (state == null && ensureLegacyStorage()) receive(getIntent());
@@ -96,6 +110,7 @@ public class DiagnosticActivity extends Activity {
         if (!"zidoobridge".equals(uri.getScheme()) || !"play".equals(uri.getHost())) {
             append("Rejected unexpected request URI."); return;
         }
+        if (resetting) { append("Session reset check in progress; retry after it finishes."); return; }
         if (!ensureLegacyStorage()) return;
         String path = uri.getQueryParameter("path");
         String requestedSession = uri.getQueryParameter("session");
@@ -220,7 +235,12 @@ public class DiagnosticActivity extends Activity {
     private void handlePlayerResult(int result, Intent data) {
         polling = false;
         if (worker != null) worker.interrupt();
-        if (session.isEmpty() || !awaitingResult) return;
+        if (session.isEmpty() || !awaitingResult) {
+            append("DIAGNOSTIC PLAYER RESULT: code=" + result + " has_data=" + (data != null)
+                    + " position_ms=" + (data == null ? -1 : data.getIntExtra("position", -1))
+                    + " duration_ms=" + (data == null ? -1 : data.getIntExtra("duration", -1)));
+            saveReport(false); return;
+        }
         try {
             JSONObject obj = sessionMessage("error");
             String path = data == null ? null : data.getStringExtra("url");
@@ -241,11 +261,79 @@ public class DiagnosticActivity extends Activity {
             returnToKodi();
         } catch (Exception e) { append("BRIDGE RESULT EXPORT ERROR: " + e); }
     }
+    private Uri checkedSmb(String path) {
+        if (path == null || path.indexOf('\0') >= 0) return null;
+        Uri uri = Uri.parse(path.replace(" ", "%20"));
+        String decoded = uri.getPath();
+        if (!"smb".equals(uri.getScheme()) || uri.getHost() == null || uri.getHost().isEmpty()
+                || uri.getAuthority() == null || uri.getAuthority().contains("@")
+                || uri.getQuery() != null || uri.getFragment() != null || decoded == null
+                || decoded.indexOf('\0') >= 0 || decoded.contains("\\") || decoded.contains("/../")
+                || decoded.endsWith("/..") || decoded.contains("/./") || decoded.endsWith("/")) return null;
+        String[] parts = decoded.split("/");
+        if (parts.length < 3 || parts[1].isEmpty()) return null;
+        String lower = parts[parts.length - 1].toLowerCase(Locale.US);
+        if (!lower.matches(".+\\.(mkv|mp4|m4v|avi|mov|ts|m2ts|mts|mpg|mpeg|iso|vob|wmv|webm)")) return null;
+        return uri;
+    }
+    private void resetPending() {
+        if (resetting || polling || (worker != null && worker.isAlive())) {
+            append("Reset blocked: stop diagnostic polling and wait for it to finish first."); return;
+        }
+        if (!ensureLegacyStorage()) return;
+        resetting = true;
+        final String expectedSession = session;
+        append("Checking native player status before resetting; no library changes will be made.");
+        new Thread(() -> {
+            HttpURLConnection conn = null;
+            try {
+                conn = (HttpURLConnection)new URL(API).openConnection();
+                conn.setConnectTimeout(2000); conn.setReadTimeout(2000);
+                if (conn.getResponseCode() != 200) throw new IOException("Player status HTTP request failed");
+                StringBuilder body = new StringBuilder();
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"))) {
+                    char[] buffer = new char[4096]; int count;
+                    while ((count = reader.read(buffer)) != -1) {
+                        if (body.length() + count > 262144) throw new IOException("Player status response too large");
+                        body.append(buffer, 0, count);
+                    }
+                }
+                Object status = new JSONObject(body.toString()).opt("status");
+                if (!(status instanceof Number) || ((Number)status).doubleValue() != 806.0)
+                    throw new IOException("Player is active or status is unrecognized; close playback first");
+                runOnUiThread(() -> {
+                    try {
+                        if (destroyed || !session.equals(expectedSession) || polling
+                                || (worker != null && worker.isAlive()))
+                            throw new IOException("Session changed during reset check; retry");
+                        if (!session.isEmpty() && awaitingResult) {
+                            JSONObject cancelled = sessionMessage("error");
+                            cancelled.put("returned_path", sessionPath); cancelled.put("result_code", 0);
+                            cancelled.put("error", "Pending session reset by user while player reported idle; no library update");
+                            exportJson("bridge-result-" + session + ".json", cancelled);
+                        }
+                        awaitingResult = false; session = ""; sessionPath = ""; resumeMs = 0;
+                        persistSession();
+                        append("Pending session reset. Kodi will reject the cancelled result without updating resume or watched state.");
+                        saveReport(false);
+                    } catch (Exception e) { append("RESET ERROR: " + e); }
+                    finally { resetting = false; }
+                });
+            } catch (Exception e) {
+                append("RESET BLOCKED: " + e);
+                runOnUiThread(() -> { resetting = false; });
+            } finally { if (conn != null) conn.disconnect(); }
+        }, "ZidooResetCheck").start();
+    }
     private void launch(String path) {
         if (!ensureLegacyStorage()) return;
-        if (awaitingResult || polling || (worker != null && worker.isAlive())) { append("Diagnostic already running."); return; }
-        if (path == null || !path.startsWith("/storage/") || path.indexOf('\0') >= 0 || path.contains("/../")) {
-            append("Rejected: select a local /storage/... movie."); return;
+        if (resetting || awaitingResult || polling || (worker != null && worker.isAlive())) { append("Diagnostic already running."); return; }
+        Uri smbUri = experimentalSmb && session.isEmpty() ? checkedSmb(path) : null;
+        if (experimentalSmb && smbUri == null) {
+            append("Rejected SMB test: enter a complete smb://host/share/folder/movie.mkv path without login, password, query or fragment. Folders alone are not accepted."); return;
+        }
+        if (smbUri == null && (path == null || !path.startsWith("/storage/") || path.indexOf('\0') >= 0 || path.contains("/../"))) {
+            append("Rejected: select a local /storage/... movie. Use the separate experimental SMB test button for network diagnostics."); return;
         }
         if (!session.isEmpty()) {
             try {
@@ -257,7 +345,8 @@ public class DiagnosticActivity extends Activity {
         append("Selected path: " + path);
         Intent player = new Intent(Intent.ACTION_VIEW);
         player.setClassName("com.zidoo.player","com.zidoo.player.activity.PlayerActivity");
-        player.setDataAndType(Uri.fromFile(new File(path)),"video/*");
+        player.setDataAndType(smbUri == null ? Uri.fromFile(new File(path)) : smbUri,"video/*");
+        append("LAUNCH MODE: " + (smbUri == null ? "local storage" : "experimental SMB URI; saved Zidoo credentials only; Kodi library will not be updated"));
         // Task-preservation experiment: retain the result relationship without
         // asking Android to clear or reset the native player's activity stack.
         player.setFlags(0);
