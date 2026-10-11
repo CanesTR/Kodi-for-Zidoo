@@ -1,6 +1,6 @@
 # Android 7 compatibility development branch
 
-**Source only: Helper 0.2.8 has not been compiled or signed.** See [Z10 build and test instructions](Z10-TEST.md). The signed APK linked below remains 0.2.7 and does not include the Android 7 fix.
+**Signed tester build now available:** [Helper 0.2.8 + add-on 0.7.21 package and instructions](https://github.com/CanesTR/Kodi-for-Zidoo/tree/main/downloads/testing/0.7.21). This branch retains the compatibility source. See [source/build notes](Z10-TEST.md). Device testing is pending.
 
 # Kodi for Zidoo
 
