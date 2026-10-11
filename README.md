@@ -1,51 +1,64 @@
 # Kodi for Zidoo
 
-Preview release for native Zidoo playback from Kodi video libraries.
+Play Kodi library movies, TV episodes and music videos with Zidoo's native player, with native resume and automatic watched marking. This is an independent public preview, not an official Kodi or Zidoo release.
 
-Install the signed Helper APK and add-on ZIP using **Kodi for Zidoo install.txt**.
-Kodi itself is not bundled. Movies, TV episodes and music videos use the native
-player, with native resume and automatic watched marking at 95% final position.
+## Read this before installing
 
-Tested on Z30 Pro / firmware v1.3.45 / Android 11 / Kodi 22 BETA2 ARM 32-bit.
-A tester also reports successful local-library playback, resume, and watched marking on Z9X 8K / firmware 1.3.45 / Kodi 22 beta2 ARM 32-bit with Arctic Horizon 2. Home shortcuts did not route to Zidoo in that test. Other configurations are unverified.
+**Current builds require a complete local media path beginning with `/storage/` and a Kodi video library item.**
 
-**Media paths must begin with `/storage/`. SMB/NAS URLs are not supported in the current preview.**
+- **SMB/NAS paths are not supported yet.** This includes `smb://127.0.0.1/...` mappings of HDDs attached to the Zidoo.
+- Start playback inside **Movies, TV shows or Music videos**. Videos → Files, home shortcuts and widgets are not reliably routed to Zidoo.
+- The destination is **Zidoo's native player**, not ZDMC.
+- Kodi itself is not bundled. Two components are required; users do not need Android Studio.
 
-Known issue: Kodi 22 can restart during native playback, showing Home before
-restoring the saved library list. See [Kodi issue #29691](https://github.com/xbmc/xbmc/issues/29691).
+## Current downloads
 
-0.7.19 removes the experimental Python external-player route and its settings;
-legacy bridge-owned test rules are removed. Helper 0.2.7 is the existing signed
-APK supplied by the tester, with no APK rebuild in this release preparation.
-The new add-on packaging has automated checks but still needs device smoke testing.
+| Component | Version | Purpose |
+| --- | --- | --- |
+| [Public preview add-on ZIP](https://raw.githubusercontent.com/CanesTR/Kodi-for-Zidoo/main/downloads/Kodi-for-Zidoo-0.7.19.zip) | 0.7.19 | Automatic watched marking at 95% |
+| [Signed Zidoo Bridge Helper APK](https://raw.githubusercontent.com/CanesTR/Kodi-for-Zidoo/main/downloads/Kodi-for-Zidoo-Helper-0.2.7.apk) | 0.2.7 | Required with either add-on version |
+| [Optional test add-on ZIP](https://raw.githubusercontent.com/CanesTR/Kodi-for-Zidoo/main/downloads/testing/Kodi-for-Zidoo-0.7.20-test.zip) | 0.7.20 | 90% watched marking and shortcut diagnostics; device testing pending |
 
-Source contains the add-on, full Helper Android Studio project, and tests.
-Build Helper with your own signing key for a fork; never commit signing keys,
-passwords, local.properties, diagnostic reports or user Kodi profiles.
+Install **one add-on version plus Helper 0.2.7**. The test build does not fix SMB, shortcuts or stale-session recovery.
 
-## Downloads and installation
+## Installation
 
-Download both components:
+1. Copy the Helper APK and your chosen add-on ZIP to a USB drive.
+2. Install the Helper APK using Zidoo's File Manager. Existing users should update without uninstalling.
+3. Open the Helper, test a **complete local movie filename** beginning with `/storage/`, then save a diagnostic report.
+4. In Kodi, enable **Settings → System → Add-ons → Unknown sources**.
+5. Choose **Add-ons → Install from zip file** and install the add-on ZIP. Do not select a source archive.
+6. Fully close and reopen Kodi.
+7. Scan the local media into Kodi's video library, then open **Movies, TV shows or Music videos** and select the item.
+8. Exit playback normally so Kodi can receive the final resume position.
 
-- [Kodi for Zidoo add-on 0.7.19](https://raw.githubusercontent.com/CanesTR/Kodi-for-Zidoo/main/downloads/Kodi-for-Zidoo-0.7.19.zip)
-- [Zidoo Bridge Helper 0.2.7 signed APK](https://raw.githubusercontent.com/CanesTR/Kodi-for-Zidoo/main/downloads/Kodi-for-Zidoo-Helper-0.2.7.apk)
-- [Installation instructions](downloads/Kodi%20for%20Zidoo%20install.txt)
-- [Source archive](https://raw.githubusercontent.com/CanesTR/Kodi-for-Zidoo/main/downloads/Kodi-for-Zidoo-0.7.19-source.zip)
-- [SHA-256 checksums](downloads/SHA256SUMS.txt)
+Native Zidoo resume is on by default. Watched marking uses the final position, including seeking: **95% in 0.7.19, 90% in 0.7.20**. Long-press should retain Kodi's context menu; eligible local library items offer **Play with Zidoo**.
 
-Install the Helper APK on the Zidoo, then install the add-on ZIP inside Kodi and fully restart Kodi. Follow the installation instructions for the complete steps. Users do not need Android Studio.
+[Complete installation instructions](downloads/Kodi%20for%20Zidoo%20install.txt) · [Test instructions](downloads/testing/README.md) · [Preview checksums](downloads/SHA256SUMS.txt)
 
-## Development
+## Compatibility and feedback
 
-The add-on source is in `addon_0.7.19/`; the Android Studio project is in `android-helper/`.
-Run the automated checks from the repository root:
+Tested on **Z30 Pro / firmware 1.3.45 / Android 11 / Kodi 22 beta2 ARM 32-bit**. A tester reports successful local-library playback, resume and watched marking on **Z9X 8K / firmware 1.3.45 / Kodi 22 beta2 ARM 32-bit / Arctic Horizon 2**. Home shortcuts failed to route to Zidoo in that test.
+
+Other configurations, including Z9X Pro, original Z10, Kodi 20.2 and Maven builds, are unverified.
+
+**Known return issue:** Kodi can restart during native playback and show Home before restoring the library list. See [Kodi issue #29691](https://github.com/xbmc/xbmc/issues/29691).
+
+For a pending/queue message, record its exact wording and save a Helper diagnostic report before clearing data. Only discard a pending session when no Zidoo video is playing.
+
+[Report test results or problems](https://github.com/CanesTR/Kodi-for-Zidoo/issues). Include model, firmware, Android version, exact Kodi build, skin, component versions, complete media path without credentials, and whether you used the library, Files or a widget. Report playback, resume, watched marking and return behavior. Never post passwords or credential XML files.
+
+## Source and development
+
+[0.7.19 source archive](https://raw.githubusercontent.com/CanesTR/Kodi-for-Zidoo/main/downloads/Kodi-for-Zidoo-0.7.19-source.zip). Source folders: `addon_0.7.19/`, `addon_0.7.20/`, and `android-helper/`.
+
+Run tests from the repository root:
 
 ```sh
 python -m unittest discover -s tests_0.7.19
+python -m unittest discover -s tests_0.7.20
 ```
 
-This is an independent project, not an official Kodi or Zidoo release.
+The 0.7.20 build passed 21 automated tests; device testing is pending. Helper 0.2.7 is the existing signed APK. Forks should use their own signing key. Never commit signing keys, passwords, local.properties, user profiles or diagnostic logs.
 
-## Optional test build
-
-[0.7.20 test instructions and download](downloads/testing/README.md): changes automatic watched marking to 90% and adds shortcut selection diagnostics. Uses the existing Helper 0.2.7; device testing is pending. The default preview downloads above remain 0.7.19.
+Source archives and previously downloaded packages contain the instructions from their packaging date; this page and the linked installation text contain the latest guidance.
