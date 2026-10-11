@@ -23,6 +23,17 @@ class ResumeTests(unittest.TestCase):
         self.assertEqual(resume['position'], 67.224)
         self.assertFalse(watched)
 
+    def test_manual_helper_reset_clears_pending_without_library_write(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bridge = self.load_bridge(directory)
+            bridge.save(bridge.PENDING, self.pending)
+            bridge.rpc = Mock()
+            bridge.read_shared = Mock(return_value=dict(self.result, helper_version='0.2.8', status='error', result_code=0, error='Pending session reset by user'))
+            with self.assertRaises(ValueError):
+                bridge.process_pending()
+            self.assertIsNone(bridge.load_pending())
+            bridge.rpc.assert_not_called()
+
     def test_helper_023_result_supported(self):
         resume, watched = checked_resume(self.pending, dict(self.result, helper_version='0.2.3'))
         self.assertEqual(resume['position'], 67.224)
