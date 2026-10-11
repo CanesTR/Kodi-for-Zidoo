@@ -11,7 +11,13 @@ Play Kodi library movies, TV episodes and music videos with Zidoo's native playe
 - The destination is **Zidoo's native player**, not ZDMC.
 - Kodi itself is not bundled. Two components are required; users do not need Android Studio.
 
-## Current downloads
+## Latest tester package: add-on 0.7.21 + Helper 0.2.8
+
+**[Download the complete tester package](https://raw.githubusercontent.com/CanesTR/Kodi-for-Zidoo/main/downloads/testing/0.7.21/Kodi-for-Zidoo-0.7.21-Helper-0.2.8-test-package.zip)** · [Installation and test steps](downloads/testing/0.7.21/README.md)
+
+Includes the newly built signed Helper APK, Android 6–9 export support, an experimental standalone SMB test, pending-session reset and expanded diagnostics. Pair it with add-on 0.7.21 (90% watched threshold). SMB playback from Kodi and shortcut routing remain unsupported/unverified. Device testing is pending. The regular preview below remains unchanged.
+
+## Current public preview downloads
 
 | Component | Version | Purpose |
 | --- | --- | --- |
