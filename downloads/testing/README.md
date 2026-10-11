@@ -1,5 +1,7 @@
 # 0.7.20 test build
 
+[Download the 0.7.20 test ZIP](https://raw.githubusercontent.com/CanesTR/Kodi-for-Zidoo/main/downloads/testing/Kodi-for-Zidoo-0.7.20-test.zip) · [Full installation instructions](../Kodi%20for%20Zidoo%20install.txt)
+
 Requires the existing signed Helper 0.2.7. Install this ZIP inside Kodi and fully restart Kodi. No Helper reinstall or APK rebuild is needed.
 
 Automatic watched marking changes to 90% of the final playback position. Seeking counts toward this threshold. Validated native results are still required.
