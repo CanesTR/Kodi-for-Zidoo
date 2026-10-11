@@ -1,0 +1,4 @@
+<settings>
+  <setting id="normal_play" type="bool" label="Use Zidoo for Select/OK and Play in video library" default="true"/>
+  <setting id="native_resume" type="bool" label="Use Zidoo native resume dialog" default="true"/>
+</settings>
