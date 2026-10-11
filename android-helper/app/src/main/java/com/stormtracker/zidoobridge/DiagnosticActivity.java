@@ -49,7 +49,7 @@ public class DiagnosticActivity extends Activity {
         layout.setFocusable(false);
         layout.setPadding(24,24,24,24);
         TextView heading = new TextView(this);
-        heading.setText("Kodi for Zidoo Helper 0.2.7 — diagnostics");
+        heading.setText("Kodi for Zidoo Helper 0.2.8 — diagnostics");
         layout.addView(heading);
         pathInput = new EditText(this);
         pathInput.setId(101);
@@ -74,10 +74,10 @@ public class DiagnosticActivity extends Activity {
             String line; while ((line = reader.readLine()) != null) report.append(line).append('\n');
         } catch (FileNotFoundException ignored) {
         } catch (Exception e) { report.append("Checkpoint recovery failed: ").append(e).append('\n'); }
-        append("Helper 0.2.7 opened. Previous diagnostic checkpoint retained.");
+        append("Helper 0.2.8 opened. Previous diagnostic checkpoint retained.");
         append("HELPER TASK: id=" + getTaskId() + " root=" + isTaskRoot() + " incoming_flags=" + getIntent().getFlags());
-        append("No root, shell command, or storage permission changes. Direct file URI experiment.");
-        if (state == null) receive(getIntent());
+        append("No root or shell commands. Android 6–9 requires storage permission for Downloads export.");
+        if (state == null && ensureLegacyStorage()) receive(getIntent());
     }
     @Override protected void onResume() {
         super.onResume();
@@ -96,6 +96,7 @@ public class DiagnosticActivity extends Activity {
         if (!"zidoobridge".equals(uri.getScheme()) || !"play".equals(uri.getHost())) {
             append("Rejected unexpected request URI."); return;
         }
+        if (!ensureLegacyStorage()) return;
         String path = uri.getQueryParameter("path");
         String requestedSession = uri.getQueryParameter("session");
         if (awaitingResult) { append("Player result still pending for the current session."); return; }
@@ -118,8 +119,47 @@ public class DiagnosticActivity extends Activity {
                 .putBoolean("awaiting", awaitingResult).commit())
             throw new IllegalStateException("Could not checkpoint playback session");
     }
+    private boolean ensureLegacyStorage() {
+        if (Build.VERSION.SDK_INT >= 29 || checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                == android.content.pm.PackageManager.PERMISSION_GRANTED) return true;
+        requestPermissions(new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, 71);
+        return false;
+    }
+    @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
+        super.onRequestPermissionsResult(requestCode, permissions, results);
+        if (requestCode != 71) return;
+        if (results.length > 0 && results[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            append("Legacy Downloads storage permission granted.");
+            if (isBridgeRequest(getIntent())) receive(getIntent());
+            else append("Select Test playback or Save diagnostic report to continue.");
+        } else {
+            if (diagnosticLayout != null) diagnosticLayout.setVisibility(android.view.View.VISIBLE);
+            append("Storage permission denied. Allow storage permission in Android app settings to export reports and playback results.");
+        }
+    }
+    private Uri exportLegacy(String name, String text) throws IOException {
+        if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != android.content.pm.PackageManager.PERMISSION_GRANTED)
+            throw new IOException("Storage permission is required for Downloads export");
+        if (!Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState()))
+            throw new IOException("Shared storage is unavailable");
+        File directory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "ZidooBridge");
+        if (!directory.isDirectory() && !directory.mkdirs()) throw new IOException("Could not create " + directory);
+        File destination = new File(directory, name);
+        if (!destination.getCanonicalFile().getParentFile().equals(directory.getCanonicalFile()))
+            throw new IOException("Invalid export filename");
+        File temporary = File.createTempFile("bridge-", ".tmp", directory);
+        try {
+            try (FileOutputStream out = new FileOutputStream(temporary)) {
+                out.write(text.getBytes("UTF-8"));
+                out.getFD().sync();
+            }
+            if (!temporary.renameTo(destination)) throw new IOException("Could not publish " + destination);
+            return Uri.fromFile(destination);
+        } finally { if (temporary.exists()) temporary.delete(); }
+    }
     private Uri exportJson(String name, JSONObject obj) throws Exception {
-        if (Build.VERSION.SDK_INT < 29) throw new IOException("Android 10 or later required");
+        if (Build.VERSION.SDK_INT < 29) return exportLegacy(name, obj.toString());
         ContentValues values = new ContentValues();
         values.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
         values.put(MediaStore.MediaColumns.MIME_TYPE, "application/json");
@@ -144,7 +184,7 @@ public class DiagnosticActivity extends Activity {
     private JSONObject sessionMessage(String status) throws Exception {
         JSONObject obj = new JSONObject();
         obj.put("schema", 1); obj.put("session", session); obj.put("path", sessionPath);
-        obj.put("status", status); obj.put("helper_version", "0.2.7");
+        obj.put("status", status); obj.put("helper_version", "0.2.8");
         obj.put("native_resume", nativeResume);
         obj.put("timestamp_ms", System.currentTimeMillis()); return obj;
     }
@@ -202,6 +242,7 @@ public class DiagnosticActivity extends Activity {
         } catch (Exception e) { append("BRIDGE RESULT EXPORT ERROR: " + e); }
     }
     private void launch(String path) {
+        if (!ensureLegacyStorage()) return;
         if (awaitingResult || polling || (worker != null && worker.isAlive())) { append("Diagnostic already running."); return; }
         if (path == null || !path.startsWith("/storage/") || path.indexOf('\0') >= 0 || path.contains("/../")) {
             append("Rejected: select a local /storage/... movie."); return;
@@ -277,13 +318,19 @@ public class DiagnosticActivity extends Activity {
     }
     private void saveReport() { saveReport(true); }
     private void saveReport(boolean showDialog) {
-        if (Build.VERSION.SDK_INT < 29) {
-            append("Direct Downloads export requires Android 10 or later.");
-            return;
-        }
+        if (!ensureLegacyStorage()) return;
         String name = "zidoo-helper-report-" + new SimpleDateFormat("yyyyMMdd-HHmmss-SSS", Locale.US).format(new Date()) + ".txt";
         Uri saved = null;
         try {
+            if (Build.VERSION.SDK_INT < 29) {
+                String snapshot;
+                synchronized (report) { snapshot = report.toString(); }
+                Uri legacy = exportLegacy(name, snapshot);
+                append("REPORT SAVED: " + legacy.getPath());
+                if (showDialog) new android.app.AlertDialog.Builder(this).setTitle("Diagnostic report saved")
+                    .setMessage("Internal storage: " + legacy.getPath()).setPositiveButton("OK", null).show();
+                return;
+            }
             ContentValues values = new ContentValues();
             values.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
             values.put(MediaStore.MediaColumns.MIME_TYPE, "text/plain");
