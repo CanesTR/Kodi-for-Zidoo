@@ -2,16 +2,22 @@
 
 Play Kodi library movies, TV episodes and music videos with Zidoo's native player, with native resume and automatic watched marking. This is an independent public preview, not an official Kodi or Zidoo release.
 
+## Latest SMB integration test: add-on 0.7.22 + Helper 0.2.9
+
+**[Download tester package](https://raw.githubusercontent.com/CanesTR/Kodi-for-Zidoo/main/downloads/testing/0.7.22/Kodi-for-Zidoo-0.7.22-Helper-0.2.9-test-package.zip)** · [Installation and test instructions](downloads/testing/0.7.22/README.md)
+
+Install both components and enable **Test SMB library playback** in the add-on settings. This opt-in test uses Zidoo’s saved NAS login and verifies complete returned file identity before updating Kodi resume/watched state. Standalone SMB playback was confirmed by a Z9X 8K tester; integrated Kodi behavior still needs device testing. Credential-free library URLs only. Home widgets and Files playback remain outside this test.
+
 ## Read this before installing
 
-**Current builds require a complete local media path beginning with `/storage/` and a Kodi video library item.**
+**The regular preview requires a complete local media path beginning with `/storage/` and a Kodi video library item.**
 
-- **SMB/NAS paths are not supported yet.** This includes `smb://127.0.0.1/...` mappings of HDDs attached to the Zidoo.
+- **SMB/NAS paths are not supported in the regular preview. Use the opt-in 0.7.22 / 0.2.9 test above for SMB library testing.** This includes `smb://127.0.0.1/...` mappings of HDDs attached to the Zidoo.
 - Start playback inside **Movies, TV shows or Music videos**. Videos → Files, home shortcuts and widgets are not reliably routed to Zidoo.
 - The destination is **Zidoo's native player**, not ZDMC.
 - Kodi itself is not bundled. Two components are required; users do not need Android Studio.
 
-## Latest tester package: add-on 0.7.21 + Helper 0.2.8
+## Previous tester package: add-on 0.7.21 + Helper 0.2.8
 
 **[Download the complete tester package](https://raw.githubusercontent.com/CanesTR/Kodi-for-Zidoo/main/downloads/testing/0.7.21/Kodi-for-Zidoo-0.7.21-Helper-0.2.8-test-package.zip)** · [Installation and test steps](downloads/testing/0.7.21/README.md)
 
