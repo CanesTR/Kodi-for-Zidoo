@@ -1,0 +1,4 @@
+853b58951b152466446ece4aa8331cb11cf3df6df95ebe3f1eee1b9fe9516147  Kodi-for-Zidoo-0.7.23-Helper-0.2.10-test-package.zip
+9935daff18b494c4f47e9d9bc4c71d29fad3308ed84f12593f960367b9b7ad45  Kodi-for-Zidoo-0.7.23-test.zip
+3f5c34b653f682ca4d418713a2944f4afc710d50ff081784392ec7b547b094b5  Kodi-for-Zidoo-Helper-0.2.10.apk
+d31bf4c8fab10bb63e4726ab69768e21dc42e47a7086bec14b9a68e66047cc1e  TEST-INSTRUCTIONS.md

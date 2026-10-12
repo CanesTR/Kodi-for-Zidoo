@@ -2,7 +2,13 @@
 
 Play Kodi library movies, TV episodes and music videos with Zidoo's native player, with native resume and automatic watched marking. This is an independent public preview, not an official Kodi or Zidoo release.
 
-## Latest SMB integration test: add-on 0.7.22 + Helper 0.2.9
+## Latest hostname-mapping test: add-on 0.7.23 + Helper 0.2.10
+
+**[Download tester package](https://raw.githubusercontent.com/CanesTR/Kodi-for-Zidoo/main/downloads/testing/0.7.23/Kodi-for-Zidoo-0.7.23-Helper-0.2.10-test-package.zip)** · [Install and configure](downloads/testing/0.7.23/README.md)
+
+Install both components, enable SMB library playback, and configure the optional NAS hostname/IPv4 mapping when Zidoo returns an IP for a hostname-based source. No library rescan is needed. The mapped identity is pinned per session and full share/folder/file matching remains required. Device validation is pending.
+
+## Previous SMB integration test: add-on 0.7.22 + Helper 0.2.9
 
 **[Download tester package](https://raw.githubusercontent.com/CanesTR/Kodi-for-Zidoo/main/downloads/testing/0.7.22/Kodi-for-Zidoo-0.7.22-Helper-0.2.9-test-package.zip)** · [Installation and test instructions](downloads/testing/0.7.22/README.md)
 
