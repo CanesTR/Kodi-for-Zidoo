@@ -1,3 +1,7 @@
+## Signed tester build now available
+
+[Download Helper 0.2.9 + add-on 0.7.22 and follow the installation/test instructions](https://github.com/CanesTR/Kodi-for-Zidoo/tree/main/downloads/testing/0.7.22). Users can install the prebuilt APK. Device testing is pending. The source/build notes below are retained for developers.
+
 # SMB library development test
 
 [Download Helper 0.2.9 build package](https://raw.githubusercontent.com/CanesTR/Kodi-for-Zidoo/smb-library-test/downloads/development/Kodi-for-Zidoo-Helper-0.2.9-SMB-build-package.zip)
