@@ -1,0 +1,41 @@
+Kodi for Zidoo 0.7.25 + Helper 0.2.11: ZDMC launch test
+
+INSTALL
+1. Extract this package and copy the APK and add-on ZIP to your Zidoo.
+2. Install Kodi-for-Zidoo-Helper-0.2.11.apk as an update to your Helper.
+   Do not uninstall it or clear Kodi data.
+3. In Kodi choose Add-ons > Install from zip file and select
+   Kodi-for-Zidoo-0.7.25-ZDMC-launch-test.zip. Do not install the whole package.
+4. Fully close and reopen Kodi. Keep your working SMB/NAS mapping settings.
+5. Use official Kodi for this test. The separate Maven build is not targeted.
+
+BASELINE
+Open Helper 0.2.11 and leave Experimental ZDMC launch unchecked.
+Play and exit one movie from Kodi's Movies library. Confirm playback,
+resume, watched marking and restoration of the movie/list still work.
+Home may still appear on return.
+
+EXPERIMENTAL TEST
+1. Open the Helper and check Experimental ZDMC launch (S928 devices; test first).
+   The setting saves immediately and applies to Kodi launches too.
+2. First enter a complete local /storage/.../movie.mkv path and select
+   Test Zidoo playback. Exit normally and select Save diagnostic report.
+   This standalone test does not update Kodi's library.
+3. Try the same movie from Kodi's Movies library. Note whether Kodi restarts,
+   whether Home appears, and whether it returns to the correct movie/list.
+4. Test native resume, a TV episode and an SMB movie with your working settings.
+   Check resume and automatic watched marking at a final position of 90%.
+5. Send the Helper report plus kodi.log and kodi.old.log after the test.
+   Reports are in Internal storage/Download/ZidooBridge.
+
+RECOVERY
+If playback fails, uncheck Experimental ZDMC launch.
+If a pending session blocks that, close the native player, select Stop
+diagnostic polling, wait for polling to stop, then Reset pending session.
+Reset requires the native player to report idle. Then uncheck the option.
+Missing or incompatible player results will not update the Kodi library.
+
+This is an experimental S928-device launch mode, not a confirmed return fix.
+Standard PlayerActivity remains the default. Experimental mode uses
+ZDMCActivity with play_mode=zdmc but retains our existing result relationship
+and zero task flags. No device result has been confirmed for this build yet.

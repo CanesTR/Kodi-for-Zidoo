@@ -4,9 +4,9 @@ Play Kodi library movies, TV episodes and music videos with Zidoo's native playe
 
 ## Experimental ZDMC launch test: add-on 0.7.25 + Helper 0.2.11
 
-**[Download Android Studio source package](downloads/testing/0.7.25/Kodi-for-Zidoo-0.7.25-Helper-0.2.11-ZDMC-test-source.zip)** · [Build and test instructions](downloads/testing/0.7.25/README.md)
+**[Download complete tester package](downloads/testing/0.7.25/Kodi-for-Zidoo-0.7.25-Helper-0.2.11-test-package.zip)** · [Installation and test instructions](downloads/testing/0.7.25/README.md)
 
-Source only; no signed APK is included yet. This opt-in S928-device test uses Zidoo's ZDMC activity while keeping strict native-result validation. Standard playback remains the default. The Home-screen transition fix is unconfirmed; device testing is required.
+Includes the signed Helper 0.2.11 APK, add-on 0.7.25 ZIP and instructions. Install both components. This opt-in S928-device test uses Zidoo's ZDMC activity while keeping strict native-result validation. Standard playback remains the default. The Home-screen transition fix is unconfirmed; device testing is required.
 
 ## Latest hostname-mapping test: add-on 0.7.23 + Helper 0.2.10
 
