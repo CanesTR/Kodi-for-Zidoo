@@ -32,6 +32,7 @@ public class DiagnosticActivity extends Activity {
     private Thread worker;
     private boolean resetting;
     private boolean experimentalSmb;
+    private boolean bridgeSmb;
     private static final String API = "http://127.0.0.1:9529/ZidooVideoPlay/getPlayStatus";
 
     @Override public void onCreate(Bundle state) {
@@ -51,7 +52,7 @@ public class DiagnosticActivity extends Activity {
         layout.setFocusable(false);
         layout.setPadding(24,24,24,24);
         TextView heading = new TextView(this);
-        heading.setText("Kodi for Zidoo Helper 0.2.8 — diagnostics");
+        heading.setText("Kodi for Zidoo Helper 0.2.9 — diagnostics");
         layout.addView(heading);
         pathInput = new EditText(this);
         pathInput.setId(101);
@@ -61,12 +62,12 @@ public class DiagnosticActivity extends Activity {
         Button smb = new Button(this); smb.setId(106); smb.setText("Test experimental SMB path (no Kodi update)");
         smb.setOnClickListener(v -> {
             if (awaitingResult) { append("Reset or finish the pending session before a diagnostic test."); return; }
-            session = ""; resumeMs = 0; nativeResume = true;
+            session = ""; resumeMs = 0; nativeResume = true; bridgeSmb = false;
             experimentalSmb = true;
             try { launch(pathInput.getText().toString()); } finally { experimentalSmb = false; }
         }); layout.addView(smb);
         Button launch = new Button(this); launch.setId(102); launch.setText("Test Zidoo playback");
-        launch.setOnClickListener(v -> { if (!awaitingResult) { session = ""; resumeMs = 0; nativeResume = false; } launch(pathInput.getText().toString()); }); layout.addView(launch);
+        launch.setOnClickListener(v -> { if (!awaitingResult) { session = ""; resumeMs = 0; nativeResume = false; bridgeSmb = false; } launch(pathInput.getText().toString()); }); layout.addView(launch);
         Button stop = new Button(this); stop.setId(103); stop.setText("Stop diagnostic polling (keeps movie playing)");
         stop.setOnClickListener(v -> { polling = false; append("User stopped polling."); }); layout.addView(stop);
         Button save = new Button(this); saveButton = save; save.setId(104); save.setText("Save diagnostic report");
@@ -87,7 +88,7 @@ public class DiagnosticActivity extends Activity {
             String line; while ((line = reader.readLine()) != null) report.append(line).append('\n');
         } catch (FileNotFoundException ignored) {
         } catch (Exception e) { report.append("Checkpoint recovery failed: ").append(e).append('\n'); }
-        append("Helper 0.2.8 opened. Previous diagnostic checkpoint retained.");
+        append("Helper 0.2.9 opened. Previous diagnostic checkpoint retained.");
         append("DEVICE: Android=" + Build.VERSION.RELEASE + " API=" + Build.VERSION.SDK_INT + " model=" + Build.MODEL + " manufacturer=" + Build.MANUFACTURER + " firmware=" + Build.DISPLAY);
         append("HELPER TASK: id=" + getTaskId() + " root=" + isTaskRoot() + " incoming_flags=" + getIntent().getFlags());
         append("No root or shell commands. Android 6–9 requires storage permission for Downloads export.");
@@ -126,6 +127,7 @@ public class DiagnosticActivity extends Activity {
             if (resumeMs < 0) throw new IllegalArgumentException("Negative resume");
         } catch (Exception e) { append("Rejected invalid resume position."); session = ""; return; }
         nativeResume = "1".equals(uri.getQueryParameter("native_resume"));
+        bridgeSmb = "1".equals(uri.getQueryParameter("allow_smb"));
         if (path != null) { pathInput.setText(path); launch(path); }
     }
     private void persistSession() {
@@ -199,7 +201,7 @@ public class DiagnosticActivity extends Activity {
     private JSONObject sessionMessage(String status) throws Exception {
         JSONObject obj = new JSONObject();
         obj.put("schema", 1); obj.put("session", session); obj.put("path", sessionPath);
-        obj.put("status", status); obj.put("helper_version", "0.2.8");
+        obj.put("status", status); obj.put("helper_version", "0.2.9");
         obj.put("native_resume", nativeResume);
         obj.put("timestamp_ms", System.currentTimeMillis()); return obj;
     }
@@ -247,7 +249,7 @@ public class DiagnosticActivity extends Activity {
             int position = data == null ? -1 : data.getIntExtra("position", -1);
             int duration = data == null ? -1 : data.getIntExtra("duration", -1);
             String end = data == null ? null : data.getStringExtra("end_by");
-            boolean valid = result == RESULT_OK && sessionPath.equals(path) && duration > 0
+            boolean valid = result == RESULT_OK && MediaPath.sameResult(sessionPath, path) && duration > 0
                 && position >= 0 && position <= duration && end != null;
             obj.put("result_code", result); obj.put("returned_path", path == null ? "" : path);
             obj.put("position_ms", position); obj.put("duration_ms", duration);
@@ -264,6 +266,7 @@ public class DiagnosticActivity extends Activity {
     private Uri checkedSmb(String path) {
         if (path == null || path.indexOf('\0') >= 0) return null;
         Uri uri = Uri.parse(path.replace(" ", "%20"));
+        try { MediaPath.smbMount(path); } catch (Exception invalid) { return null; }
         String decoded = uri.getPath();
         if (!"smb".equals(uri.getScheme()) || uri.getHost() == null || uri.getHost().isEmpty()
                 || uri.getAuthority() == null || uri.getAuthority().contains("@")
@@ -328,8 +331,8 @@ public class DiagnosticActivity extends Activity {
     private void launch(String path) {
         if (!ensureLegacyStorage()) return;
         if (resetting || awaitingResult || polling || (worker != null && worker.isAlive())) { append("Diagnostic already running."); return; }
-        Uri smbUri = experimentalSmb && session.isEmpty() ? checkedSmb(path) : null;
-        if (experimentalSmb && smbUri == null) {
+        Uri smbUri = (experimentalSmb || bridgeSmb) ? checkedSmb(path) : null;
+        if ((experimentalSmb || bridgeSmb) && smbUri == null) {
             append("Rejected SMB test: enter a complete smb://host/share/folder/movie.mkv path without login, password, query or fragment. Folders alone are not accepted."); return;
         }
         if (smbUri == null && (path == null || !path.startsWith("/storage/") || path.indexOf('\0') >= 0 || path.contains("/../"))) {
@@ -346,7 +349,7 @@ public class DiagnosticActivity extends Activity {
         Intent player = new Intent(Intent.ACTION_VIEW);
         player.setClassName("com.zidoo.player","com.zidoo.player.activity.PlayerActivity");
         player.setDataAndType(smbUri == null ? Uri.fromFile(new File(path)) : smbUri,"video/*");
-        append("LAUNCH MODE: " + (smbUri == null ? "local storage" : "experimental SMB URI; saved Zidoo credentials only; Kodi library will not be updated"));
+        append("LAUNCH MODE: " + (smbUri == null ? "local storage" : (session.isEmpty() ? "experimental SMB diagnostic; no Kodi update" : "experimental SMB library session; verified native result required")));
         // Task-preservation experiment: retain the result relationship without
         // asking Android to clear or reset the native player's activity stack.
         player.setFlags(0);
