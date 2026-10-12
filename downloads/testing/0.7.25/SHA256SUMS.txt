@@ -1,0 +1,2 @@
+3a62d126cd440dca166262cdeccff5767726f7dc9cdafd552daf9f9467dc85cd  Kodi-for-Zidoo-0.7.25-ZDMC-launch-test.zip
+3f9065b9cf72eb64684b31bbdac0064d1566dfc659adb081e9feb0566ddd63bf  Kodi-for-Zidoo-0.7.25-Helper-0.2.11-ZDMC-test-source.zip

@@ -1,0 +1,14 @@
+plugins { id 'com.android.application' }
+android {
+    lint { disable 'ExpiredTargetSdkVersion' }
+    namespace 'com.stormtracker.zidoobridge'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'com.stormtracker.zidoobridge'
+        minSdk 23
+        targetSdk 28
+        versionCode 14
+        versionName '0.2.11'
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+}

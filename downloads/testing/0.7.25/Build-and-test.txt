@@ -1,0 +1,76 @@
+Kodi for Zidoo: add-on 0.7.25 + Helper 0.2.11
+Experimental ZDMC launch test for S928 devices, including Z30 Pro
+
+This is source for building a new signed APK. No APK is included.
+The working standard PlayerActivity mode remains the default.
+Do not uninstall Kodi or clear app data for this test.
+
+BUILD THE HELPER
+1. Extract this package completely on your PC.
+2. In Android Studio choose File > Open, then select android-helper
+   inside the extracted folder. Select the folder, not app/build.gradle.
+3. Let Gradle sync. Version is already 0.2.11 / versionCode 14.
+4. Build > Generate Signed Bundle / APK > APK.
+5. Select the SAME keystore and key alias used for your previous Helper.
+6. Select release and finish. Install the generated APK on the Zidoo
+   as an update over Helper 0.2.10.
+   If Android refuses the update, check the signing key before uninstalling.
+
+If your existing Android Studio project uses different working Gradle/plugin
+versions, keep those versions. Copy DiagnosticActivity.java from this package
+into app/src/main/java/com/stormtracker/zidoobridge/ of that project and set
+app/build.gradle to versionCode 14 and versionName '0.2.11'.
+MediaPath.java and the manifest are unchanged from Helper 0.2.10.
+Do not change targetSdk for this experiment.
+
+INSTALL THE ADD-ON
+1. Install Kodi-for-Zidoo-0.7.25-ZDMC-launch-test.zip in Kodi through
+   Add-ons > Install from zip file. Do not install this whole source package.
+2. Fully close and reopen Kodi. Keep your working SMB and NAS mapping settings.
+3. Use official Kodi (org.xbmc.kodi) for integrated testing; Helper return
+   still targets that package. The separately installed Maven build is not
+   the target for this test.
+
+TEST STANDARD MODE FIRST
+1. Open Helper 0.2.11. Leave Experimental ZDMC launch unchecked.
+2. Play and exit one movie from Kodi's Movies library.
+3. Confirm your previous playback/resume/watched behavior still works.
+   Home may still appear during return.
+
+TEST EXPERIMENTAL MODE
+1. Open Helper and check Experimental ZDMC launch (S928 devices; test first).
+   The setting saves immediately and also applies to launches from Kodi.
+2. First enter a complete local /storage/.../movie.mkv filename and select
+   Test Zidoo playback. Exit normally, then Save diagnostic report.
+   This standalone test does not change Kodi resume or watched state.
+3. Check the report for DIAGNOSTIC PLAYER RESULT, its result code, URL,
+   position, duration, end_by and result keys. Send that report with feedback.
+4. If playback works, try the SAME movie from Kodi's Movies library.
+   Note whether Home appears, whether Kodi restarts, and whether the selected
+   movie/list is restored. Test native resume separately.
+5. Then test a TV episode and an SMB movie using the existing working NAS
+   settings. Confirm resume and watched marking at a final position of 90%.
+6. Send the Helper report and Kodi's kodi.log / kodi.old.log after the test.
+
+RECOVERY
+If the activity cannot launch, uncheck Experimental ZDMC launch.
+If a pending session remains, first close the native player, select Stop
+diagnostic polling, then Reset pending session after polling has stopped.
+Reset only succeeds when the player reports idle. Then uncheck the option.
+A missing or incompatible native result must not update Kodi's library.
+Do not clear Kodi data to recover from this experiment.
+Reports are saved in Internal storage/Download/ZidooBridge.
+
+WHAT THIS TEST CHANGES
+The experimental mode uses com.zidoo.player.activity.ZDMCActivity with
+play_mode=zdmc and the ZDMC media/source/network extras found in ZDMC 21.
+It keeps return_result=true, startActivityForResult and zero task flags so
+we can evaluate result compatibility. ZDMC itself uses NEW_TASK|CLEAR_TASK
+and startActivity; this experiment deliberately does not copy those flags.
+The standard mode retains the working launch behavior.
+
+No automatic fallback hides an experimental launch failure. No result is
+accepted without the existing full session/path/time validation.
+The keepAlive string found in the APK belongs to NFS connection handling;
+it is not evidence of an Android app keepalive mechanism.
+This experiment has not yet been built or tested on a device.

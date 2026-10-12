@@ -2,6 +2,12 @@
 
 Play Kodi library movies, TV episodes and music videos with Zidoo's native player, with native resume and automatic watched marking. This is an independent public preview, not an official Kodi or Zidoo release.
 
+## Experimental ZDMC launch test: add-on 0.7.25 + Helper 0.2.11
+
+**[Download Android Studio source package](downloads/testing/0.7.25/Kodi-for-Zidoo-0.7.25-Helper-0.2.11-ZDMC-test-source.zip)** · [Build and test instructions](downloads/testing/0.7.25/README.md)
+
+Source only; no signed APK is included yet. This opt-in S928-device test uses Zidoo's ZDMC activity while keeping strict native-result validation. Standard playback remains the default. The Home-screen transition fix is unconfirmed; device testing is required.
+
 ## Latest hostname-mapping test: add-on 0.7.23 + Helper 0.2.10
 
 **[Download tester package](https://raw.githubusercontent.com/CanesTR/Kodi-for-Zidoo/main/downloads/testing/0.7.23/Kodi-for-Zidoo-0.7.23-Helper-0.2.10-test-package.zip)** · [Install and configure](downloads/testing/0.7.23/README.md)
