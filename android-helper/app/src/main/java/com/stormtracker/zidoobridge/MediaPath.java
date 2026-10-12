@@ -39,4 +39,30 @@ public final class MediaPath {
             return expected.equals(actual);
         } catch (Exception invalid) { return false; }
     }
+
+    public static boolean validPinnedMount(String selected, String expected) {
+        try {
+            String original = smbMount(selected);
+            String prefix = "/mnt/smb/";
+            if (expected == null || !expected.startsWith(prefix)) return false;
+            int separator = expected.indexOf('#', prefix.length());
+            if (separator < 0) return false;
+            String host = expected.substring(prefix.length(), separator);
+            String originalHost = original.substring(prefix.length(), original.indexOf('#'));
+            if (!expected.substring(separator).equals(original.substring(original.indexOf('#')))) return false;
+            if (host.equals(originalHost)) return true;
+            String[] octets = host.split("\\.", -1);
+            if (octets.length != 4) return false;
+            for (String octet : octets) {
+                if (!octet.matches("0|[1-9][0-9]{0,2}") || Integer.parseInt(octet) > 255) return false;
+            }
+            return true;
+        } catch (Exception invalid) { return false; }
+    }
+
+    public static boolean sameResult(String selected, String returned, String expected) {
+        if (expected == null || expected.isEmpty()) return sameResult(selected, returned);
+        if (!validPinnedMount(selected, expected)) return false;
+        return sameResult(selected, returned) || expected.equals(returned);
+    }
 }

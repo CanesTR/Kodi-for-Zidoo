@@ -19,6 +19,7 @@ import org.json.JSONObject;
 public class DiagnosticActivity extends Activity {
     private String session = "";
     private String sessionPath = "";
+    private String expectedMount = "";
     private int resumeMs;
     private boolean nativeResume;
     private boolean awaitingResult;
@@ -40,6 +41,7 @@ public class DiagnosticActivity extends Activity {
         android.content.SharedPreferences prefs = getSharedPreferences("bridge", MODE_PRIVATE);
         session = prefs.getString("session", "");
         sessionPath = prefs.getString("path", "");
+        expectedMount = prefs.getString("expected_mount", "");
         resumeMs = prefs.getInt("resume", 0);
         nativeResume = prefs.getBoolean("native_resume", false);
         awaitingResult = prefs.getBoolean("awaiting", false);
@@ -52,7 +54,7 @@ public class DiagnosticActivity extends Activity {
         layout.setFocusable(false);
         layout.setPadding(24,24,24,24);
         TextView heading = new TextView(this);
-        heading.setText("Kodi for Zidoo Helper 0.2.9 — diagnostics");
+        heading.setText("Kodi for Zidoo Helper 0.2.10 — diagnostics");
         layout.addView(heading);
         pathInput = new EditText(this);
         pathInput.setId(101);
@@ -62,12 +64,12 @@ public class DiagnosticActivity extends Activity {
         Button smb = new Button(this); smb.setId(106); smb.setText("Test experimental SMB path (no Kodi update)");
         smb.setOnClickListener(v -> {
             if (awaitingResult) { append("Reset or finish the pending session before a diagnostic test."); return; }
-            session = ""; resumeMs = 0; nativeResume = true; bridgeSmb = false;
+            session = ""; expectedMount = ""; resumeMs = 0; nativeResume = true; bridgeSmb = false;
             experimentalSmb = true;
             try { launch(pathInput.getText().toString()); } finally { experimentalSmb = false; }
         }); layout.addView(smb);
         Button launch = new Button(this); launch.setId(102); launch.setText("Test Zidoo playback");
-        launch.setOnClickListener(v -> { if (!awaitingResult) { session = ""; resumeMs = 0; nativeResume = false; bridgeSmb = false; } launch(pathInput.getText().toString()); }); layout.addView(launch);
+        launch.setOnClickListener(v -> { if (!awaitingResult) { session = ""; expectedMount = ""; resumeMs = 0; nativeResume = false; bridgeSmb = false; } launch(pathInput.getText().toString()); }); layout.addView(launch);
         Button stop = new Button(this); stop.setId(103); stop.setText("Stop diagnostic polling (keeps movie playing)");
         stop.setOnClickListener(v -> { polling = false; append("User stopped polling."); }); layout.addView(stop);
         Button save = new Button(this); saveButton = save; save.setId(104); save.setText("Save diagnostic report");
@@ -88,7 +90,7 @@ public class DiagnosticActivity extends Activity {
             String line; while ((line = reader.readLine()) != null) report.append(line).append('\n');
         } catch (FileNotFoundException ignored) {
         } catch (Exception e) { report.append("Checkpoint recovery failed: ").append(e).append('\n'); }
-        append("Helper 0.2.9 opened. Previous diagnostic checkpoint retained.");
+        append("Helper 0.2.10 opened. Previous diagnostic checkpoint retained.");
         append("DEVICE: Android=" + Build.VERSION.RELEASE + " API=" + Build.VERSION.SDK_INT + " model=" + Build.MODEL + " manufacturer=" + Build.MANUFACTURER + " firmware=" + Build.DISPLAY);
         append("HELPER TASK: id=" + getTaskId() + " root=" + isTaskRoot() + " incoming_flags=" + getIntent().getFlags());
         append("No root or shell commands. Android 6–9 requires storage permission for Downloads export.");
@@ -119,6 +121,12 @@ public class DiagnosticActivity extends Activity {
         if (requestedSession != null && !requestedSession.matches("[a-f0-9]{32}")) {
             append("Rejected invalid session identifier."); return;
         }
+        String requestedMount = uri.getQueryParameter("expected_mount");
+        requestedMount = requestedMount == null ? "" : requestedMount;
+        if (!requestedMount.isEmpty() && !MediaPath.validPinnedMount(path, requestedMount)) {
+            append("Rejected invalid pinned SMB mount identity."); return;
+        }
+        expectedMount = requestedMount;
         session = requestedSession == null ? "" : requestedSession;
         sessionPath = path == null ? "" : path;
         try {
@@ -132,7 +140,7 @@ public class DiagnosticActivity extends Activity {
     }
     private void persistSession() {
         if (!getSharedPreferences("bridge", MODE_PRIVATE).edit().putString("session", session)
-                .putString("path", sessionPath).putInt("resume", resumeMs).putBoolean("native_resume", nativeResume)
+                .putString("expected_mount", expectedMount).putString("path", sessionPath).putInt("resume", resumeMs).putBoolean("native_resume", nativeResume)
                 .putBoolean("awaiting", awaitingResult).commit())
             throw new IllegalStateException("Could not checkpoint playback session");
     }
@@ -201,8 +209,8 @@ public class DiagnosticActivity extends Activity {
     private JSONObject sessionMessage(String status) throws Exception {
         JSONObject obj = new JSONObject();
         obj.put("schema", 1); obj.put("session", session); obj.put("path", sessionPath);
-        obj.put("status", status); obj.put("helper_version", "0.2.9");
-        obj.put("native_resume", nativeResume);
+        obj.put("status", status); obj.put("helper_version", "0.2.10");
+        obj.put("native_resume", nativeResume); obj.put("expected_mount", expectedMount);
         obj.put("timestamp_ms", System.currentTimeMillis()); return obj;
     }
     private void returnToKodi() {
@@ -249,7 +257,7 @@ public class DiagnosticActivity extends Activity {
             int position = data == null ? -1 : data.getIntExtra("position", -1);
             int duration = data == null ? -1 : data.getIntExtra("duration", -1);
             String end = data == null ? null : data.getStringExtra("end_by");
-            boolean valid = result == RESULT_OK && MediaPath.sameResult(sessionPath, path) && duration > 0
+            boolean valid = result == RESULT_OK && MediaPath.sameResult(sessionPath, path, expectedMount) && duration > 0
                 && position >= 0 && position <= duration && end != null;
             obj.put("result_code", result); obj.put("returned_path", path == null ? "" : path);
             obj.put("position_ms", position); obj.put("duration_ms", duration);
@@ -315,7 +323,7 @@ public class DiagnosticActivity extends Activity {
                             cancelled.put("error", "Pending session reset by user while player reported idle; no library update");
                             exportJson("bridge-result-" + session + ".json", cancelled);
                         }
-                        awaitingResult = false; session = ""; sessionPath = ""; resumeMs = 0;
+                        awaitingResult = false; session = ""; sessionPath = ""; expectedMount = ""; resumeMs = 0;
                         persistSession();
                         append("Pending session reset. Kodi will reject the cancelled result without updating resume or watched state.");
                         saveReport(false);

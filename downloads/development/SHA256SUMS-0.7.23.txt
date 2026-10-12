@@ -1,0 +1,2 @@
+9935daff18b494c4f47e9d9bc4c71d29fad3308ed84f12593f960367b9b7ad45  Kodi-for-Zidoo-0.7.23-test.zip
+a38c9a4982cf70432c318bf707855786d9318a56bf6bf1ea94e97012b68b63b5  Kodi-for-Zidoo-Helper-0.2.10-hostname-build-package.zip

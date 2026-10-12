@@ -1,57 +1,55 @@
-## Signed tester build now available
+# SMB hostname mapping development test
 
-[Download Helper 0.2.9 + add-on 0.7.22 and follow the installation/test instructions](https://github.com/CanesTR/Kodi-for-Zidoo/tree/main/downloads/testing/0.7.22). Users can install the prebuilt APK. Device testing is pending. The source/build notes below are retained for developers.
+[Download Helper 0.2.10 build package](https://raw.githubusercontent.com/CanesTR/Kodi-for-Zidoo/smb-hostname-test/downloads/development/Kodi-for-Zidoo-Helper-0.2.10-hostname-build-package.zip)
 
-# SMB library development test
+Includes the full Android Studio project and add-on 0.7.23 ZIP. A signed Helper 0.2.10 APK must be built; the previous APK does not contain this fix.
 
-[Download Helper 0.2.9 build package](https://raw.githubusercontent.com/CanesTR/Kodi-for-Zidoo/smb-library-test/downloads/development/Kodi-for-Zidoo-Helper-0.2.9-SMB-build-package.zip)
+# Hostname-to-IP SMB test: add-on 0.7.23 + Helper 0.2.10
 
-Contains the full Android Studio project and matching 0.7.22 add-on ZIP. **Build and sign Helper 0.2.9 before installing the add-on for SMB testing.**
+Helper 0.2.10 is source only until a signed APK is built. Install both new components for this test.
 
-# SMB library test: add-on 0.7.22 + Helper 0.2.9
+## Build the Helper APK
 
-**Helper source only. A signed 0.2.9 APK must be built before testing. Helper 0.2.8 does not support SMB bridge sessions.**
+1. Extract the build-package ZIP into a new folder.
+2. In Android Studio, Open its android-helper folder and let Gradle sync finish.
+3. Generate a signed release APK using the same existing Helper keystore and alias.
+4. Version is already 0.2.10 / versionCode 13.
+5. If using a previous working project, replace BOTH DiagnosticActivity.java and MediaPath.java under app/src/main/java/com/stormtracker/zidoobridge/.
+   Retain the AndroidManifest.xml legacy storage permission and set versionCode 13 / versionName 0.2.10. Keep your working Gradle/plugin versions.
+6. Do not share signing keys or passwords.
 
-## Build
+## Install and configure
 
-1. Extract the build-package ZIP and open its android-helper folder in Android Studio.
-2. Let Gradle sync finish, then build a signed release APK using the existing Helper keystore and alias.
-3. Version is already 0.2.9 / versionCode 12.
-4. If updating your previous working Android Studio project, copy BOTH Java files:
-   app/src/main/java/com/stormtracker/zidoobridge/DiagnosticActivity.java
-   app/src/main/java/com/stormtracker/zidoobridge/MediaPath.java
-   Also retain the AndroidManifest.xml storage-permission change and set versionCode 12 / versionName 0.2.9. Keep your working Gradle/plugin versions.
-5. Do not share your keystore or passwords.
+1. Update the Helper with the signed 0.2.10 APK.
+2. Install Kodi-for-Zidoo-0.7.23-test.zip inside Kodi, then fully close and reopen Kodi.
+3. In Kodi for Zidoo > Configure, enable Test SMB library playback.
+4. If Kodi uses a NAS hostname but Zidoo returns an IPv4 mount address, enter both:
+   NAS hostname to map: the hostname used in Kodi's SMB source (host only).
+   That NAS IPv4 address: the current address of that same NAS.
+   Confirm the address in your NAS/router settings or a diagnostic report before using the mapping.
+5. Leave both fields empty when hostname mapping is unnecessary.
+6. You do not need to change or rescan existing library paths.
+7. Confirm Zidoo File Explorer has a saved login for the NAS and plays the same video.
 
-## Install and test
+This is one explicit user-configured hostname/IP mapping, not automatic DNS discovery. It applies only to the configured hostname (case-insensitive hostname comparison).
+The share, folders and filename remain case-sensitive and must match exactly.
+If the NAS IP changes, update the setting before launching another test.
 
-1. Update the Zidoo with your signed Helper 0.2.9 APK.
-2. Open the Helper, allow storage permission on Android 6–9, and save a diagnostic report.
-3. Install the included Kodi-for-Zidoo-0.7.22-test.zip inside Kodi and fully restart Kodi.
-4. Open Kodi for Zidoo add-on settings and enable **Test SMB library playback**.
-5. Use a complete credential-free smb://host/share/folder/movie.mkv path in Kodi's scanned video library.
-   Store Kodi credentials separately; embedded login/password URLs are not supported.
-6. First confirm Zidoo File Explorer plays the same NAS file using its saved connection.
-7. Select the file inside Movies, TV shows or Music videos. The native Zidoo player should launch.
-8. Exit normally and check Kodi's final resume bookmark.
-9. Play again and check native Zidoo resume.
-10. Exit below 90% and confirm the resume point; exit at 90% or above and check automatic watched marking.
-11. Repeat with another file, a TV episode, and a local /storage/ file.
-12. Save the Helper report and Kodi log if a step fails. Review before sharing.
+## Behavior and tests
 
-## Scope
+At launch, the add-on pins the expected mount path in the pending session and passes it to the Helper.
+The Helper validates that the pinned mapping changes only the host portion to an IPv4 address; it persists the identity for recovery and exports it with the result.
+The add-on requires that identity to match its launch checkpoint before applying resume/watched changes.
+No hostname lookup is performed during result processing. A different host/IP, share, folder or filename must not update the library.
 
-SMB library routing is opt-in and uses Zidoo's saved NAS credentials. No password-file import, new credential storage, mount creation or path redirection settings are included.
-The mapping is based on the tester's successful Z9X 8K report:
-smb://host/share/folder/file → /mnt/smb/host#share/folder/file.
-Both components compare the complete host/share/folder/filename identity. Spaces and UTF-8 escapes are decoded; case is preserved.
-Credentials, explicit ports, IPv6 hosts, malformed paths, encoded path separators, dot traversal, queries and fragments are rejected.
-Other firmware may use a different return-path convention; mismatches must leave the library unchanged.
+Test a hostname-based library movie, native resume, exiting below 90%, and watched marking at 90% or above.
+Repeat with a NAS file using a direct IP URL and with a local /storage/ file.
+Save Helper and Kodi logs if rejected. Review before sharing; never upload credentials.
+Use Kodi's Movies/TV shows/Music videos library, not Files or widgets.
 
-Local playback, the 90% watched threshold, legacy Android export and guarded session reset are retained.
-Home widgets/shortcuts, Videos → Files and arbitrary add-on streams remain outside this test. Kodi's restart issue remains.
-The Helper's separate SMB diagnostic button still performs a standalone test without a Kodi library update.
+SMB URLs must remain credential-free. Zidoo's saved NAS login is used.
+The 90% threshold, guarded session reset and Android 6–9 export support are retained.
+Kodi's restart/Home-screen issue remains.
 
-31 automated add-on tests passed, including original-library update and idempotent retry for a mounted SMB result.
-Python and Java syntax checks passed. The Helper has not been compiled in this environment, and integrated SMB playback/resume/watched behavior still needs device testing.
-The tester report established standalone SMB launch and native results on Z9X 8K; it does not establish integrated Kodi support yet.
+34 automated add-on tests passed. Python syntax checks passed.
+Helper compilation and real-device playback/results validation are required.
