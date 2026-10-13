@@ -1,5 +1,7 @@
 # Experimental ZDMC launch: add-on 0.7.25 + Helper 0.2.11
 
+**Z30 Pro test result (12 October 2026): leave Experimental ZDMC launch OFF.** Experimental mode played local media but returned result code 0 with no result data, so resume/watched updates were correctly rejected. SMB attempts returned immediately without confirmed playback. Kodi still restarted. Use the standard PlayerActivity mode; this experiment has not solved the return transition.
+
 **[Download the complete tester package](Kodi-for-Zidoo-0.7.25-Helper-0.2.11-test-package.zip)** · [Installation and test instructions](Kodi-for-Zidoo-test.txt)
 
 Includes the signed Helper 0.2.11 APK, add-on 0.7.25 ZIP and test instructions. Android Studio is not required to install this package. Update both components without uninstalling Kodi or clearing its data.

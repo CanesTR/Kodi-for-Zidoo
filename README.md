@@ -4,6 +4,8 @@ Play Kodi library movies, TV episodes and music videos with Zidoo's native playe
 
 ## Experimental ZDMC launch test: add-on 0.7.25 + Helper 0.2.11
 
+**Z30 Pro test result (12 October 2026): leave Experimental ZDMC launch OFF.** Experimental mode played local media but returned result code 0 with no result data, so resume/watched updates were correctly rejected. SMB attempts returned immediately without confirmed playback. Kodi still restarted. Use the standard PlayerActivity mode; this experiment has not solved the return transition.
+
 **[Download complete tester package](downloads/testing/0.7.25/Kodi-for-Zidoo-0.7.25-Helper-0.2.11-test-package.zip)** · [Installation and test instructions](downloads/testing/0.7.25/README.md)
 
 Includes the signed Helper 0.2.11 APK, add-on 0.7.25 ZIP and instructions. Install both components. This opt-in S928-device test uses Zidoo's ZDMC activity while keeping strict native-result validation. Standard playback remains the default. The Home-screen transition fix is unconfirmed; device testing is required.
