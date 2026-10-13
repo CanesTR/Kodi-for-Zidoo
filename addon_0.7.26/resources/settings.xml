@@ -1,0 +1,7 @@
+<settings>
+  <setting id="normal_play" type="bool" label="Use Zidoo for Select/OK and Play in video library" default="true"/>
+  <setting id="native_resume" type="bool" label="Use Zidoo native resume dialog" default="true"/>
+  <setting id="experimental_smb" type="bool" label="Test SMB library playback (requires Helper 0.2.10 and saved Zidoo NAS login)" default="false"/>
+  <setting id="nas_hostname" type="text" label="NAS hostname to map (optional, e.g. WDMYCLOUD1)" default=""/>
+  <setting id="nas_ipv4" type="text" label="That NAS IPv4 address (e.g. 192.168.1.17)" default=""/>
+</settings>

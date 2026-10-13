@@ -2,6 +2,12 @@
 
 Play Kodi library movies, TV episodes and music videos with Zidoo's native player, with native resume and automatic watched marking. This is an independent public preview, not an official Kodi or Zidoo release.
 
+## Return diagnostics: add-on 0.7.26
+
+[Download add-on ZIP](downloads/testing/0.7.26/Kodi-for-Zidoo-0.7.26-return-diagnostics.zip) · [Test instructions](downloads/testing/0.7.26/README.md)
+
+Uses the existing Helper 0.2.11 with **Experimental ZDMC launch OFF**. Logs Kodi process IDs and return windows to investigate occasional direct returns versus restarts. No Helper rebuild is needed. This is diagnostic logging, not a confirmed return fix.
+
 ## Experimental ZDMC launch test: add-on 0.7.25 + Helper 0.2.11
 
 **Z30 Pro test result (12 October 2026): leave Experimental ZDMC launch OFF.** Experimental mode played local media but returned result code 0 with no result data, so resume/watched updates were correctly rejected. SMB attempts returned immediately without confirmed playback. Kodi still restarted. Use the standard PlayerActivity mode; this experiment has not solved the return transition.
