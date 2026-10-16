@@ -27,6 +27,10 @@ jobs:
           echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> "$GITHUB_ENV"
           echo "KODI_ANDROID_STORE_FILE=$RUNNER_TEMP/kodi-diagnostic.keystore" >> "$GITHUB_ENV"
           df -h
+      - name: Set up Android SDK command-line tools
+        uses: android-actions/setup-android@v4
+        with:
+          log-accepted-android-sdk-licenses: 'false'
       - name: Install pinned Android toolchain
         shell: bash
         run: |
