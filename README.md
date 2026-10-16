@@ -2,6 +2,12 @@
 
 Play Kodi library movies, TV episodes and music videos with Zidoo's native player, with native resume and automatic watched marking. This is an independent public preview, not an official Kodi or Zidoo release.
 
+## Kodi process-exit diagnostic build
+
+[Build status and source](diagnostics/kodi-exit-v1/README.md) · [GitHub build runs](https://github.com/CanesTR/Kodi-for-Zidoo/actions/workflows/kodi-diagnostic.yml)
+
+A separate ARM32 Kodi 22 beta2 diagnostic app is being prepared to record Android's own process-exit reason without ADB. This is a full native build, not another Helper update. No diagnostic APK has been verified yet. Keep the working Kodi installation and current bridge packages.
+
 ## SMB filename hash test: add-on 0.7.27 + Helper 0.2.12
 
 [Download complete tester package](downloads/testing/0.7.27/Kodi-for-Zidoo-0.7.27-Helper-0.2.12-test-package.zip) · [Installation and test instructions](downloads/testing/0.7.27/README.md)

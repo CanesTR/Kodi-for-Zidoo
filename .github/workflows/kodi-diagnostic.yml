@@ -1,0 +1,82 @@
+name: Build diagnostic Kodi ARM32
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/kodi-diagnostic.yml'
+      - 'diagnostics/kodi-exit-v1/**'
+permissions:
+  contents: read
+jobs:
+  android-arm32:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    env:
+      KODI_ANDROID_KEY_ALIAS: androiddebugkey
+      KODI_ANDROID_KEY_PASSWORD: android
+      KODI_ANDROID_STORE_PASSWORD: android
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare build machine
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup
+          sudo apt-get update
+          sudo apt-get install -y autoconf automake autopoint bison build-essential curl flex gawk gettext git gperf lib32stdc++6 lib32z1 lib32z1-dev libcurl4-openssl-dev libtool openjdk-17-jdk-headless pkg-config unzip zip zlib1g-dev
+          echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> "$GITHUB_ENV"
+          echo "KODI_ANDROID_STORE_FILE=$RUNNER_TEMP/kodi-diagnostic.keystore" >> "$GITHUB_ENV"
+          df -h
+      - name: Install pinned Android toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+          sdkmanager --sdk_root="$ANDROID_HOME" "platform-tools" "platforms;android-37.0" "build-tools;37.0.0" "ndk;28.2.13676358"
+          keytool -genkeypair -keystore "$KODI_ANDROID_STORE_FILE" -storepass android -keypass android -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 365 -dname "CN=Kodi Zidoo Diagnostic Test"
+      - name: Fetch exact Kodi beta2 source and apply diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/kodi"
+          git -C "$RUNNER_TEMP/kodi" init
+          git -C "$RUNNER_TEMP/kodi" remote add origin https://github.com/xbmc/xbmc.git
+          git -C "$RUNNER_TEMP/kodi" fetch --depth=1 origin e513e0ff4331fc25fd2454659a9dd3e6b7670146
+          git -C "$RUNNER_TEMP/kodi" checkout --detach FETCH_HEAD
+          python3 diagnostics/kodi-exit-v1/apply.py "$RUNNER_TEMP/kodi"
+      - name: Build native dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/kodi/tools/depends"
+          ./bootstrap
+          ./configure --with-tarballs="$RUNNER_TEMP/kodi-tarballs" --host=arm-linux-androideabi --with-sdk-path="$ANDROID_HOME" --with-ndk-path="$ANDROID_HOME/ndk/28.2.13676358" --prefix="$RUNNER_TEMP/kodi-depends"
+          make -j2
+      - name: Configure and build diagnostic Kodi
+        shell: bash
+        run: |
+          set -euo pipefail
+          make -C "$RUNNER_TEMP/kodi/tools/depends/target/cmakebuildsys" BUILD_DIR="$RUNNER_TEMP/kodi-build" Configuration=Release
+          make -C "$RUNNER_TEMP/kodi-build" -j2
+          make -C "$RUNNER_TEMP/kodi-build" apk
+      - name: Collect and verify APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p diagnostic-output
+          mapfile -t apks < <(find "$RUNNER_TEMP/kodi" "$RUNNER_TEMP/kodi-build" -maxdepth 2 -type f -name '*.apk')
+          test "${#apks[@]}" -gt 0
+          for apk in "${apks[@]}"; do
+            "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --verbose "$apk"
+            cp "$apk" diagnostic-output/
+          done
+          cp diagnostics/kodi-exit-v1/TESTING.md diagnostic-output/
+          cd diagnostic-output
+          sha256sum ./*.apk > SHA256SUMS.txt
+      - name: Upload diagnostic APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kodi-Zidoo-Diagnostic-ARM32
+          path: diagnostic-output/
+          retention-days: 14
+          if-no-files-found: error
