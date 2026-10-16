@@ -1,0 +1,2 @@
+480b088684ed1790db82a0cd6441c2ac9cd1e93d0b44b4bb6c8187a6dd09bc30  Kodi-for-Zidoo-0.7.27-SMB-hash-test.zip
+f9599924941ae320d2d872467a89af031c173536c33724ac264d5a568ad019b6  Kodi-for-Zidoo-0.7.27-Helper-0.2.12-SMB-hash-source.zip

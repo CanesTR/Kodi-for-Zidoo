@@ -2,6 +2,12 @@
 
 Play Kodi library movies, TV episodes and music videos with Zidoo's native player, with native resume and automatic watched marking. This is an independent public preview, not an official Kodi or Zidoo release.
 
+## SMB filename hash test: add-on 0.7.27 + Helper 0.2.12
+
+[Download Android Studio source package](downloads/testing/0.7.27/Kodi-for-Zidoo-0.7.27-Helper-0.2.12-SMB-hash-source.zip) · [Build and test instructions](downloads/testing/0.7.27/README.md)
+
+Source only; a new signed Helper APK must be built. Fixes literal `#` in SMB folders and filenames, including the `#Chef` path reported in issue #2. Install both components and keep Experimental ZDMC launch OFF. Full native-result checks are retained. Device testing is pending; this does not fix Kodi's restart/Home transition.
+
 ## Return diagnostics: add-on 0.7.26
 
 [Download add-on ZIP](downloads/testing/0.7.26/Kodi-for-Zidoo-0.7.26-return-diagnostics.zip) · [Test instructions](downloads/testing/0.7.26/README.md)
