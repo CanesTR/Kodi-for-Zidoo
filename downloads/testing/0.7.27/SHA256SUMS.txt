@@ -1,2 +1,4 @@
+d93e9456a9ebb7d7e20e6bff33a6b70074e3a83ecc19279b62bab5c454f58cf5  Kodi-for-Zidoo-Helper-0.2.12.apk
+607dd8751afeb059246fd0d978f66159007f12cf359c6e192f7fdb40d09252c8  Kodi-for-Zidoo-0.7.27-Helper-0.2.12-test-package.zip
 480b088684ed1790db82a0cd6441c2ac9cd1e93d0b44b4bb6c8187a6dd09bc30  Kodi-for-Zidoo-0.7.27-SMB-hash-test.zip
 f9599924941ae320d2d872467a89af031c173536c33724ac264d5a568ad019b6  Kodi-for-Zidoo-0.7.27-Helper-0.2.12-SMB-hash-source.zip

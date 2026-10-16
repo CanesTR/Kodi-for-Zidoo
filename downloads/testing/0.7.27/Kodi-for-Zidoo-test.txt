@@ -1,0 +1,31 @@
+Kodi for Zidoo 0.7.27 + Helper 0.2.12: SMB # filename test
+
+INSTALL
+1. Extract this package. Copy the APK and add-on ZIP to your Zidoo.
+2. Install Kodi-for-Zidoo-Helper-0.2.12.apk over the existing Helper.
+   Do not uninstall it or clear Kodi data.
+3. In Kodi > Add-ons > Install from zip file, choose
+   Kodi-for-Zidoo-0.7.27-SMB-hash-test.zip. Do not install the whole package.
+4. Fully close and reopen Kodi once. Keep your working SMB/NAS mapping settings.
+5. In the Helper keep Experimental ZDMC launch OFF.
+
+TEST
+1. Verify an ordinary local movie and an ordinary SMB movie first.
+2. Play the original #Chef library entry, without renaming files or folders.
+   This build supports literal # and encoded %23 in SMB subfolders/filenames.
+   No rescan should be needed.
+3. Check Zidoo playback, native resume, Kodi's saved resume point, and watched
+   marking at a final position of 90%.
+4. Test another # filename if available, and a TV episode via SMB.
+5. Save the Helper report and Kodi's kodi.log / kodi.old.log. Note whether
+   playback was started from the library or a shortcut.
+
+This is a filename fix, not a solution for Kodi restarting or showing Home.
+Full result checks remain enabled. Missing/mismatched results cannot update
+Kodi resume/watched state. No skin or shortcut-routing changes are included.
+Credentials, ports, queries, traversal and # in share names remain unsupported.
+The filename is escaped for player launch but the Kodi library path is retained.
+
+If a pending session remains, close the native player, stop diagnostic polling,
+wait for polling to stop, then reset the session while the player is idle.
+Reports are saved in Internal storage/Download/ZidooBridge.
