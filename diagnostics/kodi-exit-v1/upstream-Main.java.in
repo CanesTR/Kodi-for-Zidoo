@@ -360,4 +360,3 @@ public class Main extends NativeActivity implements Choreographer.FrameCallback
     return name;
   }
 }
-
