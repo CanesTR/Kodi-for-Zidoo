@@ -22,7 +22,7 @@ jobs:
         working-directory: diagnostics/zidoo-system-inspector
         run: |
           sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
-          bash gradlew --no-daemon assembleDebug lintDebug
+          bash gradlew --no-daemon assembleDebug lintDebug || { cat app/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt; exit 1; }
           "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --verbose app/build/outputs/apk/debug/app-debug.apk
           sha256sum app/build/outputs/apk/debug/app-debug.apk > app/build/outputs/apk/debug/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
