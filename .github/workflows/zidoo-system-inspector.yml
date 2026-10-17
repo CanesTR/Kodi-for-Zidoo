@@ -27,9 +27,10 @@ jobs:
           sha256sum app/build/outputs/apk/debug/app-debug.apk > app/build/outputs/apk/debug/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: Zidoo-System-Inspector-0.1.0
+          name: Zidoo-System-Inspector-0.1.1
           path: |
             diagnostics/zidoo-system-inspector/app/build/outputs/apk/debug/app-debug.apk
             diagnostics/zidoo-system-inspector/app/build/outputs/apk/debug/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14
+

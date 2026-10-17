@@ -14,6 +14,11 @@ import android.provider.MediaStore;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.ScrollView;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.File;
@@ -38,25 +43,43 @@ public class MainActivity extends Activity {
         layout.setPadding(36, 28, 36, 28);
         TextView title = new TextView(this);
         title.setTextSize(24);
-        title.setText("Zidoo System Inspector 0.1.0");
+        title.setText("Zidoo System Inspector 0.1.1");
         layout.addView(title);
         TextView explanation = new TextView(this);
-        explanation.setText("Save a report and copies of selected installed system APKs for code inspection. "
-            + "Includes system apps granted permission to force-stop apps, plus Zidoo's player and launcher. "
-            + "Also records any process names Android makes visible. PID identification is not guaranteed. "
-            + "No settings are changed. No app data, media paths, passwords or playback history are collected. "
-            + "The ZIP may be large; upload it privately for analysis rather than publishing vendor APKs.");
+        explanation.setText("Save a small caller snapshot first. It checks visible process names, recent caller PIDs, "
+            + "selected Zidoo playback properties and framework filenames. Android may block process access; "
+            + "the report records those restrictions. A current PID name does not prove a historical caller identity. "
+            + "No settings are changed and no apps are stopped. The full APK export is available separately.");
         explanation.setTextSize(18);
         layout.addView(explanation);
+        Button snapshot = new Button(this);
+        snapshot.setText("Save caller snapshot (small)");
+        layout.addView(snapshot);
+        snapshot.setOnClickListener(v -> {
+            snapshot.setEnabled(false);
+            status.setText("Checking process visibility...");
+            new Thread(() -> {
+                try {
+                    String filename = exportSnapshot();
+                    runOnUiThread(() -> { status.setText("Saved: Internal storage/Download/ZidooSystemInspector/" + filename);
+                        snapshot.setEnabled(true); });
+                } catch (Exception e) {
+                    runOnUiThread(() -> { status.setText("Could not save: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+                        snapshot.setEnabled(true); });
+                }
+            }, "caller-snapshot").start();
+        });
         save = new Button(this);
-        save.setText("Save analysis ZIP to Downloads");
+        save.setText("Save full system APK ZIP (large)");
         layout.addView(save);
         status = new TextView(this);
         status.setTextSize(18);
         status.setText("Ready. No ADB or developer options required.");
         layout.addView(status);
-        setContentView(layout);
-        save.requestFocus();
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(layout);
+        setContentView(scroll);
+        snapshot.requestFocus();
         save.setOnClickListener(v -> {
             save.setEnabled(false);
             status.setText("Collecting system information and copying APKs...");
@@ -71,6 +94,143 @@ public class MainActivity extends Activity {
                 }
             }, "system-inspection-export").start();
         });
+    }
+
+    private JSONObject command(String... args) throws Exception {
+        JSONObject result = new JSONObject();
+        result.put("command", new JSONArray(java.util.Arrays.asList(args)));
+        result.put("timestamp_ms", System.currentTimeMillis());
+        java.lang.Process process = null;
+        try {
+            process = new ProcessBuilder(args).redirectErrorStream(true).start();
+            final InputStream input = process.getInputStream();
+            FutureTask<String> reader = new FutureTask<>(() -> {
+                try (InputStream in = input; ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+                    byte[] buf = new byte[4096];
+                    int n;
+                    while ((n = in.read(buf)) != -1) {
+                        int remaining = 65536 - output.size();
+                        if (remaining > 0) output.write(buf, 0, Math.min(n, remaining));
+                    }
+                    return new String(output.toByteArray(), StandardCharsets.UTF_8);
+                }
+            });
+            Thread worker = new Thread(reader, "snapshot-command-output");
+            worker.setDaemon(true);
+            worker.start();
+            boolean completed = process.waitFor(3, TimeUnit.SECONDS);
+            result.put("timed_out", !completed);
+            if (!completed) process.destroyForcibly();
+            if (completed) result.put("exit_code", process.exitValue());
+            try { result.put("output_first_64k", reader.get(1, TimeUnit.SECONDS)); }
+            catch (Exception e) { result.put("output_error", e.getClass().getSimpleName()); }
+        } catch (Exception e) {
+            result.put("error", e.getClass().getSimpleName() + ": " + e.getMessage());
+        } finally {
+            if (process != null) {
+                process.destroy();
+                try { process.getInputStream().close(); } catch (Exception ignored) { }
+                try { process.getErrorStream().close(); } catch (Exception ignored) { }
+                try { process.getOutputStream().close(); } catch (Exception ignored) { }
+            }
+        }
+        return result;
+    }
+
+    private JSONObject readSmallFile(String path) throws Exception {
+        JSONObject result = new JSONObject();
+        result.put("path", path);
+        try (FileInputStream in = new FileInputStream(path);
+             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            byte[] buf = new byte[4096];
+            int n;
+            while (output.size() < 16384 && (n = in.read(buf, 0, Math.min(buf.length, 16384-output.size()))) != -1)
+                output.write(buf, 0, n);
+            result.put("text_first_16k", new String(output.toByteArray(), StandardCharsets.UTF_8).replace('\0', ' '));
+        } catch (Exception e) { result.put("error", e.getClass().getSimpleName() + ": " + e.getMessage()); }
+        return result;
+    }
+
+    private String exportSnapshot() throws Exception {
+        JSONObject report = new JSONObject();
+        report.put("schema", 1);
+        report.put("inspector_version", "0.1.1");
+        report.put("timestamp_ms", System.currentTimeMillis());
+        report.put("model", Build.MODEL);
+        report.put("sdk", Build.VERSION.SDK_INT);
+        report.put("firmware_fingerprint", Build.FINGERPRINT);
+        report.put("interpretation", "Read-only current snapshot. Android may hide processes. PID reuse or reboot prevents retrospective identity proof. Permission errors and absent PIDs are inconclusive.");
+        JSONArray commands = new JSONArray();
+        commands.put(command("/system/bin/ps", "-A", "-o", "PID,UID,NAME"));
+        commands.put(command("/system/bin/ps", "-A"));
+        report.put("process_commands", commands);
+        JSONArray properties = new JSONArray();
+        for (String key : new String[] {"zidoo.music.package.now", "zidoo.music.package.last",
+                "zidoo.music.value.changed", "zidoo.play.video", "zidoo.boot.start.flag"}) {
+            properties.put(command("/system/bin/getprop", key));
+        }
+        report.put("selected_playback_properties", properties);
+        JSONArray files = new JSONArray();
+        files.put(readSmallFile("/proc/uptime"));
+        // These PIDs come from the uploaded exit reports; their current owners may differ.
+        for (int pid : new int[] {2290, 12575, 28398}) {
+            files.put(readSmallFile("/proc/" + pid + "/cmdline"));
+            files.put(readSmallFile("/proc/" + pid + "/stat"));
+        }
+        report.put("proc_reads", files);
+        JSONArray visible = new JSONArray();
+        List<ActivityManager.RunningAppProcessInfo> processes = ((ActivityManager)getSystemService(ACTIVITY_SERVICE)).getRunningAppProcesses();
+        if (processes != null) for (ActivityManager.RunningAppProcessInfo process : processes) {
+            JSONObject item = new JSONObject();
+            item.put("pid", process.pid); item.put("uid", process.uid); item.put("process", process.processName);
+            visible.put(item);
+        }
+        report.put("api_visible_processes", visible);
+        JSONArray candidates = new JSONArray();
+        PackageManager pm = getPackageManager();
+        for (PackageInfo info : pm.getInstalledPackages(0)) {
+            ApplicationInfo app = info.applicationInfo;
+            if ((app.flags & (ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) == 0) continue;
+            if (pm.checkPermission(FORCE_STOP, info.packageName) != PackageManager.PERMISSION_GRANTED) continue;
+            JSONObject item = new JSONObject();
+            item.put("package", info.packageName); item.put("declared_process", app.processName); item.put("uid", app.uid);
+            item.put("stopped_flag", (app.flags & ApplicationInfo.FLAG_STOPPED) != 0);
+            item.put("stopped_flag_note", "Package stopped state is not proof that no service or shared process is running.");
+            candidates.put(item);
+        }
+        report.put("stop_capable_system_packages", candidates);
+        JSONArray frameworks = new JSONArray();
+        for (String dir : new String[] {"/system/framework", "/system_ext/framework", "/vendor/framework"}) {
+            JSONObject directory = new JSONObject();
+            directory.put("directory", dir);
+            String[] names = new File(dir).list();
+            if (names == null) directory.put("error", "Directory unavailable or access denied");
+            else {
+                java.util.Arrays.sort(names);
+                JSONArray entries = new JSONArray();
+                for (String name : names) if (name.endsWith(".jar")) entries.put(name);
+                directory.put("jar_filenames", entries);
+            }
+            frameworks.put(directory);
+        }
+        report.put("framework_filenames_only", frameworks);
+        String filename = "zidoo-caller-snapshot-" + System.currentTimeMillis() + ".txt";
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Downloads.DISPLAY_NAME, filename);
+        values.put(MediaStore.Downloads.MIME_TYPE, "text/plain");
+        values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/ZidooSystemInspector");
+        values.put(MediaStore.Downloads.IS_PENDING, 1);
+        Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+        if (uri == null) throw new java.io.IOException("Downloads could not create the file");
+        try {
+            try (OutputStream output = getContentResolver().openOutputStream(uri)) {
+                if (output == null) throw new java.io.IOException("Downloads could not open the file");
+                output.write(report.toString(2).getBytes(StandardCharsets.UTF_8));
+            }
+            ContentValues done = new ContentValues(); done.put(MediaStore.Downloads.IS_PENDING, 0);
+            if (getContentResolver().update(uri, done, null, null) != 1) throw new java.io.IOException("Could not finalize report");
+        } catch (Exception e) { getContentResolver().delete(uri, null, null); throw e; }
+        return filename;
     }
 
     private String export() throws Exception {
@@ -164,3 +324,4 @@ public class MainActivity extends Activity {
         return filename;
     }
 }
+
