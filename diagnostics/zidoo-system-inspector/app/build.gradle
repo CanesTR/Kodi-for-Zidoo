@@ -1,0 +1,14 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.stormtracker.zidoosysteminspector'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'com.stormtracker.zidoosysteminspector'
+        minSdk 29
+        targetSdk 30
+        versionCode 1
+        versionName '0.1.0'
+    }
+    lint { disable 'ExpiredTargetSdkVersion' }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+}
